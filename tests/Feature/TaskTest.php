@@ -2,25 +2,25 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Http\Requests\CreateTask;
 use Carbon\Carbon;
+use Tests\TestCase;
+// use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class TaskTest extends TestCase
 {
     use RefreshDatabase;
 
 
-    public public function setUP()
+    public function setUP()
     {
         # code...
         parent::setUp();
         $this->seed('FoldersTableSeeder');
     }
 
-    public function due_date_should_be_date()
+    public function test_due_date_should_be_date()
     {
         $response = $this->post('/folders/1/tasks/create',
         [
@@ -28,32 +28,51 @@ class TaskTest extends TestCase
             'due_date' => 123, // 不正なデータ（数値）
         ]);
         $response->assertSessionHasErrors([
-            'due_date' => '期限日 には日付を入力してください。'
+            'due_date' => '期限日 には日付を入力してください。',
         ]);
     }
 
-    public function due_date_should_not_be_past()
+    public function test_due_date_should_not_be_past()
     {
         $response = $this->post('/folders/1/tasks/create',
         [
             'title' => 'Sample task',
             'due_date' => Carbon::yesterday()->format('Y/m/d'),//不正なデータ（昨日の日付）
         ]);
-        $response->assertSettionHasErrors([
+        $response->assertSessionHasErrors([
             'due_date' => '期限日 には今日以降の日付を入力してください。',
         ]);
     }
 
-    
     /**
-     * A basic feature test example.
-     *
-     * @return void
-     */
-    public function testExample()
-    {
-        $response = $this->get('/');
+  * 状態が定義された値ではない場合はバリデーションエラー
+  * @test
+  */
+public function status_should_be_within_defined_numbers()
+{
+    $this->seed('TasksTableSeeder');
 
-        $response->assertStatus(200);
-    }
+    $response = $this->post('/folders/1/tasks/1/edit', [
+        'title' => 'Sample task',
+        'due_date' => Carbon::today()->format('Y/m/d'),
+        'status' => 999,
+    ]);
+
+    $response->assertSessionHasErrors([
+        'status' => '状態 には 未着手、着手中、完了 のいずれかを指定してください。',
+    ]);
+}
+
+    
+    // /**
+    //  * A basic feature test example.
+    //  *
+    //  * @return void
+    //  */
+    // public function testExample()
+    // {
+    //     $response = $this->get('/');
+
+    //     $response->assertStatus(200);
+    // }
 }
